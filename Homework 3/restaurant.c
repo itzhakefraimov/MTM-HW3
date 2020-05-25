@@ -46,6 +46,10 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 			fscanf(ins, "%d%s%d", &TableNum, Name, &Quantity);
 			OrderItem(out, res, TableNum, Name, Quantity);
 			break;
+		case 4:
+			fscanf(ins, "%d%s%d", &TableNum, Name, &Quantity);
+			RemoveItem(out, res, TableNum, Name, Quantity);
+			break;
 		}
 	}
 
@@ -116,7 +120,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 	PItem ItemFromMenu;
 	PTable Table;
 
-	if (table_num > res->MaxTables)
+	if (table_num > res->MaxTables || table_num <= 0)
 	{
 		fprintf(out, "\nTable number %d doesn't exist", table_num);
 		return;
@@ -162,7 +166,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 
 	Table->Bill += (quantity * ItemFromMenu->Dish.Price);
 	ItemFromMenu->Dish.Quantity -= quantity;
-
+	fprintf(out, "\n%d %s were added to table number %d", quantity, name, table_num);
 }
 
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
@@ -185,17 +189,75 @@ void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 	fprintf(out, "\n%d %s were added to the kitchen", quantity, name);
 }
 
+void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity)
+{
+	POrder OrderInfo;
+
+	if (table_num > res->MaxTables || table_num <= 0)
+	{
+		fprintf(out, "\nTable number %d doesn't exist", table_num);
+		return;
+	}
+
+	if (quantity <= 0)
+	{
+		fprintf(out, "\nReturn Quantity must be a positive number");
+		return;
+	}
+
+	if ((OrderInfo = IsTableHasOrder(res->Tables[table_num - 1].OrderHead, name)) == NULL)
+	{
+		fprintf(out, "\nYou didn't order %s, therefore you cannot return it", name);
+		return;
+	}
+
+	if (quantity > OrderInfo->Data.Quantity)
+	{
+		fprintf(out, "\nYou can't return %d %s if you only ordered %d", quantity, name, OrderInfo->Data.Quantity);
+		return;
+	}
+
+	res->Tables[table_num - 1].Bill -= (quantity * OrderInfo->Data.Price);
+	OrderInfo->Data.Quantity -= quantity;
+
+	/* if the customer returned exactly the amount he orderd
+	*  the order will be removed and previous and next nodes
+	*  will be connected to each other					  */
+	if (!OrderInfo->Data.Quantity)
+	{
+		OrderInfo->Prev->Next = OrderInfo->Next;
+		OrderInfo->Next->Prev = OrderInfo->Prev;
+		free(OrderInfo);
+	}
+	fprintf(out, "\n%d %s was returned to the kitchen from table number %d", quantity, name, table_num);
+}
+
 PItem IsNameExistsInMenu(PItem menu_head, const char name[])
 {
 	if (menu_head == NULL)
 		return NULL;
 
-	while (menu_head->Next != NULL)
+	while (menu_head != NULL)
 	{
 		if (!strcmp(menu_head->Dish.ProductName, name))
 			return menu_head;
 
 		menu_head = menu_head->Next;
+	}
+	return NULL;
+}
+
+POrder IsTableHasOrder(POrder order_head, const char name[])
+{
+	if (order_head == NULL)
+		return NULL;
+
+	while (order_head != NULL)
+	{
+		if (!strcmp(order_head->Data.ProductName, name))
+			return order_head;
+
+		order_head = order_head->Next;
 	}
 	return NULL;
 }

@@ -49,8 +49,9 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res);
 void CreateProducts(FILE* in, FILE* out, PRestaurant res);
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity);
 void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity);
-void RemoveItem(int table_num, const char name[], int quantity);
+void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity);
 void RemoveTable(int table_num);
 PItem IsNameExistsInMenu(PItem menu_head, const char name[]);
+POrder IsTableHasOrder(POrder order_head, const char name[]);
 
 #endif
