@@ -61,19 +61,20 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 
 void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 {
-	char temp[MAX_PRODUCT_NAME + 1];
-	PItem NewNode, last;
+	char Temp[MAX_PRODUCT_NAME + 1];
+	PItem NewNode, Last;
 
-	while (fscanf(in, "%s", temp) != EOF)
+	while (fscanf(in, "%s", Temp) != EOF)
 	{
-		if (IsNameExistsInMenu(res->MenuHead, temp))
+		if (IsNameExistsInMenu(res->MenuHead, Temp))
 		{
-			fprintf(out, "\nThe dish %s already exists in the menu", temp);
+			fprintf(out, "\nThe dish %s already exists in the menu\n", Temp);
 			fscanf(in, "%*d%*d"); // Skips Quantity and Price values of existing Item
 			continue;
 		}
 
 		NewNode = (PItem)malloc(sizeof(struct Item));
+
 		if (NewNode == NULL)
 		{
 			// TODO:
@@ -81,7 +82,7 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
 		}
 
-		NewNode->Dish.ProductName = (char*)malloc((strlen(temp) + 1) * sizeof(char));
+		NewNode->Dish.ProductName = (char*)malloc((strlen(Temp) + 1) * sizeof(char));
 
 		if (NewNode->Dish.ProductName == NULL)
 		{
@@ -91,14 +92,14 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
 		}
 
-		strcpy(NewNode->Dish.ProductName, temp);
+		strcpy(NewNode->Dish.ProductName, Temp);
 		NewNode->TotalOrdered = 0;
 		fscanf(in, "%d%d", &NewNode->Dish.Quantity, &NewNode->Dish.Price);
 		NewNode->Next = NULL;
 
 		if (NewNode->Dish.Quantity <= 0 || NewNode->Dish.Price <= 0)
 		{
-			fprintf(out, "\nThe %s of the dish cannot be negative", NewNode->Dish.Quantity < 0 ? "quantity" : "price");
+			fprintf(out, "The %s of the dish cannot be negative\n", NewNode->Dish.Quantity < 0 ? "quantity" : "price");
 			free(NewNode->Dish.ProductName);
 			free(NewNode);
 			continue;
@@ -109,11 +110,11 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 			res->MenuHead = NewNode;
 		else
 		{
-			last = res->MenuHead;
+			Last = res->MenuHead;
 			/* Appends new Item to the end of the List */
-			while (last->Next != NULL)
-				last = last->Next;
-			last->Next = NewNode;
+			while (Last->Next != NULL)
+				Last = Last->Next;
+			Last->Next = NewNode;
 		}
 	}
 	fputs("The kitchen was created", out);
@@ -149,26 +150,31 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 		return;
 	}
 
-	if ((OrderInfo = (POrder)malloc(sizeof(Order))) == NULL)
+	Table = &res->Tables[table_num - 1];
+
+	if ((OrderInfo = IsTableHasOrder(Table->OrderHead, name)) == NULL)
 	{
-		// TODO:
-		// Free all allocated memory
-		ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+		if ((OrderInfo = (POrder)malloc(sizeof(Order))) == NULL)
+		{
+			// TODO:
+			// Free all allocated memory
+			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+		}
+
+		OrderInfo->Next = Table->OrderHead;
+		OrderInfo->Prev = NULL;
+		OrderInfo->Data = ItemFromMenu->Dish;
+		OrderInfo->Data.Quantity = 0;
+
+		if (Table->OrderHead != NULL)
+			Table->OrderHead->Prev = NULL;
+		else
+			Table->Bill = 0;
+
+		Table->OrderHead = OrderInfo;
 	}
 
-	Table = &res->Tables[table_num - 1];
-	OrderInfo->Next = Table->OrderHead;
-	OrderInfo->Prev = NULL;
-	OrderInfo->Data = ItemFromMenu->Dish;
-	OrderInfo->Data.Quantity = quantity;
-
-	if (Table->OrderHead != NULL)
-		Table->OrderHead->Prev = NULL;
-	else
-		Table->Bill = 0;
-
-	Table->OrderHead = OrderInfo;
-
+	OrderInfo->Data.Quantity += quantity;
 	Table->Bill += (quantity * ItemFromMenu->Dish.Price);
 	ItemFromMenu->Dish.Quantity -= quantity;
 	ItemFromMenu->TotalOrdered += quantity;
@@ -205,6 +211,12 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 		return;
 	}
 
+	if (res->Tables[table_num - 1].OrderHead == NULL)
+	{
+		fprintf(out, "\nTable number %d is not ordered yet", table_num);
+		return;
+	}
+
 	if (quantity <= 0)
 	{
 		fprintf(out, "\nReturn Quantity must be a positive number");
@@ -235,6 +247,7 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 		OrderInfo->Next->Prev = OrderInfo->Prev;
 		free(OrderInfo);
 	}
+
 	fprintf(out, "\n%d %s was returned to the kitchen from table number %d", quantity, name, table_num);
 }
 
@@ -335,7 +348,9 @@ PItem GetMostOrderedItem(PItem menu_head)
 void DeallocateTable(PTable table)
 {
 	POrder Current = table->OrderHead, Next;
+
 	table->Bill = 0;
+	table->OrderHead = NULL;
 
 	while (Current != NULL) {
 		Next = Current->Next;
