@@ -12,7 +12,10 @@ void ConsoleErrorMsg(const char* msg)
 
 void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 {
-	int TablesCount, Instruction;
+	int i,
+		TablesCount, Instruction,
+		TableNum, Quantity;
+	char Name[MAX_PRODUCT_NAME + 1];
 
 	fscanf(ins, "%d%d", &TablesCount, &Instruction);
 
@@ -25,7 +28,26 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 	if ((res->Tables = (PTable)malloc(TablesCount * sizeof(Table))) == NULL)
 		ConsoleErrorMsg(MEM_ALLOCATION_MSG);
 
+	for (i = 0; i < TablesCount; i++)
+		res->Tables[i].OrderHead = NULL;
+
+	res->MaxTables = TablesCount;
 	CreateProducts(menu, out, res);
+
+	while (fscanf(ins, "%d", &Instruction) != EOF)
+	{
+		switch (Instruction)
+		{
+		case 2:
+			fscanf(ins, "%s%d", Name, &Quantity);
+			AddItems(out, &res->MenuHead, Name, Quantity);
+			break;
+		case 3:
+			fscanf(ins, "%d%s%d", &TableNum, Name, &Quantity);
+			OrderItem(out, res, TableNum, Name, Quantity);
+			break;
+		}
+	}
 
 }
 
@@ -88,11 +110,66 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 	fputs("The kitchen was created", out);
 }
 
+void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity)
+{
+	POrder OrderInfo;
+	PItem ItemFromMenu;
+	PTable Table;
+
+	if (table_num > res->MaxTables)
+	{
+		fprintf(out, "\nTable number %d doesn't exist", table_num);
+		return;
+	}
+
+	if (quantity <= 0)
+	{
+		fprintf(out, "\nOrder Quantity must be positive number");
+		return;
+	}
+
+	if ((ItemFromMenu = IsNameExistsInMenu(res->MenuHead, name)) == NULL)
+	{
+		fprintf(out, "\nWe don't have %s, sorry!", name);
+		return;
+	}
+
+	if (quantity > ItemFromMenu->Dish.Quantity)
+	{
+		fprintf(out, "\nWe have only %d %s, sorry!", ItemFromMenu->Dish.Quantity, name);
+		return;
+	}
+
+	if ((OrderInfo = (POrder)malloc(sizeof(Order))) == NULL)
+	{
+		// TODO:
+		// Free all allocated memory
+		ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+	}
+
+	Table = &res->Tables[table_num - 1];
+	OrderInfo->Next = Table->OrderHead;
+	OrderInfo->Prev = NULL;
+	OrderInfo->Data = ItemFromMenu->Dish;
+	OrderInfo->Data.Quantity = quantity;
+
+	if (Table->OrderHead != NULL)
+		Table->OrderHead->Prev = NULL;
+	else
+		Table->Bill = 0;
+
+	Table->OrderHead = OrderInfo;
+
+	Table->Bill += (quantity * ItemFromMenu->Dish.Price);
+	ItemFromMenu->Dish.Quantity -= quantity;
+
+}
+
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 {
-	PItem item = IsNameExistsInMenu(*menu_head, name);
+	PItem ItemFromMenu = IsNameExistsInMenu(*menu_head, name);
 
-	if (item == NULL)
+	if (ItemFromMenu == NULL)
 	{
 		fprintf(out, "\nCan't add to %s if it doesn't exist", name);
 		return;
@@ -104,7 +181,7 @@ void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 		return;
 	}
 
-	item->Dish.Quantity += quantity;
+	ItemFromMenu->Dish.Quantity += quantity;
 	fprintf(out, "\n%d %s were added to the kitchen", quantity, name);
 }
 
