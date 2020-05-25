@@ -5,8 +5,9 @@
 void main()
 {
 	FILE* instructions, * dishes, * output;
-	PItem menu = NULL;
-	POrder tables_order;
+	Restaurant res;
+
+	res.MenuHead = NULL;
 
 	if ((instructions = fopen(INSTRUCTIONS_FILE, "rt")) == NULL)
 		ConsoleErrorMsg("Could not locate file! Exiting...");
@@ -15,7 +16,7 @@ void main()
 	if ((output = fopen(OUTPUT_FILE, "wt")) == NULL)
 		ConsoleErrorMsg("Could not create file! Exiting...");
 
-	CreateProducts(dishes, output, &menu);
+	InputInstructions(instructions, dishes, output, &res);
 
 	fclose(instructions);
 	fclose(dishes);

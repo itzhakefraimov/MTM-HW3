@@ -10,22 +10,37 @@ void ConsoleErrorMsg(const char* msg)
 	exit(EXIT_FAILURE);
 }
 
-void InputInstructions(FILE* f)
+void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 {
-	return;
+	int TablesCount, Instruction;
+
+	fscanf(ins, "%d%d", &TablesCount, &Instruction);
+
+	if (TablesCount <= 0)
+		ConsoleErrorMsg("Tables Number must be positive! Exiting...");
+
+	if (Instruction != 1)
+		ConsoleErrorMsg("First Instruction must be number 1! Exiting...");
+	
+	if ((res->Tables = (PTable)malloc(TablesCount * sizeof(Table))) == NULL)
+		ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+
+	CreateProducts(menu, out, res);
+
 }
 
-void CreateProducts(FILE* in, FILE* out, PItem* menu_head)
+void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 {
 	char temp[MAX_PRODUCT_NAME + 1];
 	PItem NewNode, last;
 
 	while (fscanf(in, "%s", temp) != EOF)
 	{
-		if (IsNameExistsInMenu(*menu_head, temp))
+		if (IsNameExistsInMenu(res->MenuHead, temp))
 		{
 			fprintf(out, "\nThe dish %s already exists in the menu", temp);
 			fscanf(in, "%*d%*d"); // Skips Quantity and Price values of existing Item
+			continue;
 		}
 
 		NewNode = (PItem)malloc(sizeof(struct Item));
@@ -33,16 +48,17 @@ void CreateProducts(FILE* in, FILE* out, PItem* menu_head)
 		{
 			// TODO:
 			// Free all allocated memory
-			ConsoleErrorMsg("Failed to allocate memory! Exiting...");
+			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
 		}
 
 		NewNode->Dish.ProductName = (char*)malloc((strlen(temp) + 1) * sizeof(char));
+
 		if (NewNode->Dish.ProductName == NULL)
 		{
 			// TODO:
 			// Free all allocated memory
 			free(NewNode);
-			ConsoleErrorMsg("Failed to allocate memory! Exiting...");
+			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
 		}
 
 		strcpy(NewNode->Dish.ProductName, temp);
@@ -58,11 +74,11 @@ void CreateProducts(FILE* in, FILE* out, PItem* menu_head)
 		}
 
 		/* If the List is empty, sets the Item as the Head */
-		if (*menu_head == NULL)
-			*menu_head = NewNode;
+		if (res->MenuHead == NULL)
+			res->MenuHead = NewNode;
 		else
 		{
-			last = *menu_head;
+			last = res->MenuHead;
 			/* Appends new Item to the end of the List */
 			while (last->Next != NULL)
 				last = last->Next;
@@ -75,6 +91,7 @@ void CreateProducts(FILE* in, FILE* out, PItem* menu_head)
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 {
 	PItem item = IsNameExistsInMenu(*menu_head, name);
+
 	if (item == NULL)
 	{
 		fprintf(out, "\nCan't add to %s if it doesn't exist", name);
@@ -91,7 +108,7 @@ void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 	fprintf(out, "\n%d %s were added to the kitchen", quantity, name);
 }
 
-struct Item* IsNameExistsInMenu(PItem menu_head, const char name[])
+PItem IsNameExistsInMenu(PItem menu_head, const char name[])
 {
 	if (menu_head == NULL)
 		return NULL;
