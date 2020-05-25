@@ -20,6 +20,7 @@ typedef struct Product
 typedef struct Item
 {
 	Product Dish;
+	int TotalOrdered;
 	struct Item* Next;
 }*PItem;
 
@@ -50,8 +51,11 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res);
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity);
 void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity);
 void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity);
-void RemoveTable(int table_num);
+void RemoveTable(FILE* out, PRestaurant res, int table_num);
 PItem IsNameExistsInMenu(PItem menu_head, const char name[]);
 POrder IsTableHasOrder(POrder order_head, const char name[]);
+BOOL IsLastRemainingTable(PRestaurant res);
+PItem GetMostOrderedItem(PItem menu_head);
+void DeallocateTable(PTable table);
 
 #endif

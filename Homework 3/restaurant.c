@@ -50,6 +50,10 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 			fscanf(ins, "%d%s%d", &TableNum, Name, &Quantity);
 			RemoveItem(out, res, TableNum, Name, Quantity);
 			break;
+		case 5:
+			fscanf(ins, "%d", &TableNum);
+			RemoveTable(out, res, TableNum);
+			break;
 		}
 	}
 
@@ -88,6 +92,7 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 		}
 
 		strcpy(NewNode->Dish.ProductName, temp);
+		NewNode->TotalOrdered = 0;
 		fscanf(in, "%d%d", &NewNode->Dish.Quantity, &NewNode->Dish.Price);
 		NewNode->Next = NULL;
 
@@ -166,6 +171,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 
 	Table->Bill += (quantity * ItemFromMenu->Dish.Price);
 	ItemFromMenu->Dish.Quantity -= quantity;
+	ItemFromMenu->TotalOrdered += quantity;
 	fprintf(out, "\n%d %s were added to table number %d", quantity, name, table_num);
 }
 
@@ -232,6 +238,41 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 	fprintf(out, "\n%d %s was returned to the kitchen from table number %d", quantity, name, table_num);
 }
 
+void RemoveTable(FILE* out, PRestaurant res, int table_num)
+{
+	PItem MostOrderedItem;
+	POrder OrderInfo;
+
+	if (table_num > res->MaxTables || table_num <= 0)
+	{
+		fprintf(out, "\nTable number %d doesn't exist", table_num);
+		return;
+	}
+
+	if (res->Tables[table_num - 1].OrderHead == NULL)
+	{
+		fprintf(out, "\nTable number %d is not ordered yet", table_num);
+		return;
+	}
+
+	OrderInfo = res->Tables[table_num - 1].OrderHead;
+
+	fprintf(out, "\n");
+
+	while (OrderInfo != NULL)
+	{
+		fprintf(out, "%d %s. ", OrderInfo->Data.Quantity, OrderInfo->Data.ProductName);
+		OrderInfo = OrderInfo->Next;
+	}
+
+	fprintf(out, "%d nis, please!", res->Tables[table_num - 1].Bill);
+
+	if (IsLastRemainingTable(res) && (MostOrderedItem = GetMostOrderedItem(res->MenuHead)) != NULL)
+		fprintf(out, "\nThe most popular dish today is %s! (was ordered %d times)", MostOrderedItem->Dish.ProductName, MostOrderedItem->TotalOrdered);
+	
+	DeallocateTable(&res->Tables[table_num - 1]);
+}
+
 PItem IsNameExistsInMenu(PItem menu_head, const char name[])
 {
 	if (menu_head == NULL)
@@ -260,4 +301,48 @@ POrder IsTableHasOrder(POrder order_head, const char name[])
 		order_head = order_head->Next;
 	}
 	return NULL;
+}
+
+BOOL IsLastRemainingTable(PRestaurant res)
+{
+	int i, count = 0;
+
+	for (i = 0; i < res->MaxTables; i++)
+		if (res->Tables[i].OrderHead != NULL)
+			count++;
+	return (count == 1) ? true : false;
+}
+
+PItem GetMostOrderedItem(PItem menu_head)
+{
+	PItem res;
+
+	if (menu_head == NULL)
+		return NULL;
+
+	res = menu_head;
+
+	while (menu_head != NULL)
+	{
+		if (menu_head->TotalOrdered > res->TotalOrdered)
+			res = menu_head;
+		menu_head = menu_head->Next;
+	}
+
+	return res->TotalOrdered ? res : NULL;
+}
+
+void DeallocateTable(PTable table)
+{
+	POrder Current = table->OrderHead, Next;
+	table->Bill = 0;
+
+	while (Current != NULL) {
+		Next = Current->Next;
+		Current->Data.ProductName = NULL;
+		Current->Data.Quantity = 0;
+		Current->Data.Price = 0;
+		free(Current);
+		Current = Next;
+	}
 }
