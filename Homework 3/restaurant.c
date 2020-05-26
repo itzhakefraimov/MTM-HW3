@@ -34,6 +34,12 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 	{
 		switch (Instruction)
 		{
+		case 1:
+			if (res->MenuHead != NULL)
+				fprintf(out, "The kitchen was already created, disregarding Instruction");
+			else
+				CreateProducts(menu, out, res);
+			break;
 		case 2:
 			fscanf(ins, "%s%d", Name, &Quantity);
 			AddItems(out, &res->MenuHead, Name, Quantity);
@@ -68,9 +74,7 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 			continue;
 		}
 
-		NewNode = (PItem)malloc(sizeof(struct Item));
-
-		if (NewNode == NULL)
+		if ((NewNode = (PItem)malloc(sizeof(struct Item)))== NULL)
 		{
 			DeallocateRestaurant(res);
 			ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
@@ -156,7 +160,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 		OrderInfo->Data.Quantity = 0;
 
 		if (Table->OrderHead != NULL)
-			Table->OrderHead->Prev = NULL;
+			Table->OrderHead->Prev = OrderInfo;
 		else
 			Table->Bill = 0;
 
@@ -182,7 +186,7 @@ void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 
 	if (quantity <= 0)
 	{
-		fprintf(out, "\nInvalid quantity was given (%d) to add to %s", quantity, name);
+		fprintf(out, "\nQuantity of %s to add must be a positive number", name);
 		return;
 	}
 
@@ -276,7 +280,6 @@ BOOL ValidateTableNumber(FILE* out, const int table_num, const int max_tables)
 		fprintf(out, "\nTable number %d doesn't exist", table_num);
 		return false;
 	}
-
 	return true;
 }
 
@@ -322,12 +325,10 @@ BOOL IsLastRemainingTable(PRestaurant res)
 
 PItem GetMostOrderedItem(PItem menu_head)
 {
-	PItem res;
+	PItem res = menu_head;
 
 	if (menu_head == NULL)
 		return NULL;
-
-	res = menu_head;
 
 	while (menu_head != NULL)
 	{

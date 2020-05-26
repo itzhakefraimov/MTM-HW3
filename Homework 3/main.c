@@ -8,11 +8,11 @@ void main()
 	res.MenuHead = NULL;
 
 	if ((instructions = fopen(INSTRUCTIONS_FILE, "rt")) == NULL)
-		ConsoleErrorMsg("Could not locate file! Exiting...");
+		ConsoleErrorMsg(ERROR_LOCATE_FILE_MSG);
 	if ((products = fopen(MENU_FILE, "rt")) == NULL)
-		ConsoleErrorMsg("Could not locate file! Exiting...");
+		ConsoleErrorMsg(ERROR_LOCATE_FILE_MSG);
 	if ((output = fopen(OUTPUT_FILE, "wt")) == NULL)
-		ConsoleErrorMsg("Could not create file! Exiting...");
+		ConsoleErrorMsg(ERROR_LOCATE_FILE_MSG);
 
 	InputInstructions(instructions, products, output, &res);
 

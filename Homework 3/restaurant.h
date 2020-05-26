@@ -7,6 +7,7 @@
 #include "stdlib.h"
 #include "string.h"
 
+#define ERROR_LOCATE_FILE_MSG "Could not locate file. Exiting..."
 #define ERROR_MEM_ALLOCATION_MSG "Failed to allocate memory. Exiting..."
 
 #define INSTRUCTIONS_FILE "Instructions.txt"
