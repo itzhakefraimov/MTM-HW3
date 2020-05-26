@@ -1,6 +1,12 @@
 #ifndef RESTAURANT_HEADER
 #define RESTAURANT_HEADER
 
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+
 #define ERROR_MEM_ALLOCATION_MSG "Failed to allocate memory. Exiting..."
 
 #define INSTRUCTIONS_FILE "Instructions.txt"
