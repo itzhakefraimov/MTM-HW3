@@ -1,1 +1,43 @@
+The quantity of the dish must be a positive number
+The price of the dish must be a positive number
 The kitchen was created
+4 Pasta were added to the kitchen
+Can't add to Bamba if it doesn't exist
+We don't have Falafel, sorry!
+4 Pasta were added to table number 5
+8 Steak were added to table number 7
+8 Steak were added to table number 7
+8 Steak were added to table number 7
+Order Quantity must be positive number
+5 Steak were added to table number 1
+2 Fish were added to table number 5
+20 Fish were added to table number 6
+1 Fish were added to table number 1
+We don't have Bamba, sorry!
+1 Steak was returned to the kitchen from table number 1
+1 Pasta was returned to the kitchen from table number 5
+You didn't order Cake, therefore you cannot return it
+Table number 3 is not ordered yet
+1 Fish. 4 Steak. 130 nis, please!
+Table number 2 is not ordered yet
+2 Fish. 3 Pasta. 150 nis, please!
+24 Steak. 600 nis, please!
+Table number 3 is not ordered yet
+20 Fish. 600 nis, please!
+The most popular dish today is Steak! (was ordered 29 times)
+We don't have enough Steak for your order, sorry!
+2 Fish were added to table number 5
+7 Fish were added to table number 6
+1 Fish were added to table number 1
+We don't have Bamba, sorry!
+You didn't order Steak, therefore you cannot return it
+You didn't order Pasta, therefore you cannot return it
+You didn't order Cake, therefore you cannot return it
+Table number 3 is not ordered yet
+1 Fish. 30 nis, please!
+Table number 2 is not ordered yet
+2 Fish. 60 nis, please!
+Table number 7 is not ordered yet
+Table number 3 is not ordered yet
+7 Fish. 210 nis, please!
+The most popular dish today is Fish! (was ordered 33 times)

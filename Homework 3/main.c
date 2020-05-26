@@ -21,4 +21,5 @@ void main()
 	fclose(instructions);
 	fclose(products);
 	fclose(output);
+	DeallocateRestaurant(&res);
 }

@@ -20,13 +20,13 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 	fscanf(ins, "%d%d", &TablesCount, &Instruction);
 
 	if (TablesCount <= 0)
-		ConsoleErrorMsg("Tables Number must be positive! Exiting...");
+		ConsoleErrorMsg("Tables Amount must be a positive number! Exiting...");
 
 	if (Instruction != 1)
 		ConsoleErrorMsg("First Instruction must be number 1! Exiting...");
 	
 	if ((res->Tables = (PTable)malloc(TablesCount * sizeof(Table))) == NULL)
-		ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+		ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
 
 	for (i = 0; i < TablesCount; i++)
 		res->Tables[i].OrderHead = NULL;
@@ -56,7 +56,6 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 			break;
 		}
 	}
-
 }
 
 void CreateProducts(FILE* in, FILE* out, PRestaurant res)
@@ -77,19 +76,17 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 
 		if (NewNode == NULL)
 		{
-			// TODO:
-			// Free all allocated memory
-			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+			DeallocateRestaurant(res);
+			ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
 		}
 
 		NewNode->Dish.ProductName = (char*)malloc((strlen(Temp) + 1) * sizeof(char));
 
 		if (NewNode->Dish.ProductName == NULL)
 		{
-			// TODO:
-			// Free all allocated memory
+			DeallocateRestaurant(res);
 			free(NewNode);
-			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+			ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
 		}
 
 		strcpy(NewNode->Dish.ProductName, Temp);
@@ -99,7 +96,7 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 
 		if (NewNode->Dish.Quantity <= 0 || NewNode->Dish.Price <= 0)
 		{
-			fprintf(out, "The %s of the dish cannot be negative\n", NewNode->Dish.Quantity < 0 ? "quantity" : "price");
+			fprintf(out, "The %s of the dish must be a positive number\n", NewNode->Dish.Quantity < 0 ? "quantity" : "price");
 			free(NewNode->Dish.ProductName);
 			free(NewNode);
 			continue;
@@ -126,9 +123,12 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 	PItem ItemFromMenu;
 	PTable Table;
 
-	if (table_num > res->MaxTables || table_num <= 0)
+	if (!ValidateTableNumber(out, table_num, res->MaxTables))
+		return;
+
+	if ((ItemFromMenu = IsNameExistsInMenu(res->MenuHead, name)) == NULL)
 	{
-		fprintf(out, "\nTable number %d doesn't exist", table_num);
+		fprintf(out, "\nWe don't have %s, sorry!", name);
 		return;
 	}
 
@@ -138,15 +138,9 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 		return;
 	}
 
-	if ((ItemFromMenu = IsNameExistsInMenu(res->MenuHead, name)) == NULL)
-	{
-		fprintf(out, "\nWe don't have %s, sorry!", name);
-		return;
-	}
-
 	if (quantity > ItemFromMenu->Dish.Quantity)
 	{
-		fprintf(out, "\nWe have only %d %s, sorry!", ItemFromMenu->Dish.Quantity, name);
+		fprintf(out, "\nWe don't have enough %s for your order, sorry!", name);
 		return;
 	}
 
@@ -156,9 +150,8 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 	{
 		if ((OrderInfo = (POrder)malloc(sizeof(Order))) == NULL)
 		{
-			// TODO:
-			// Free all allocated memory
-			ConsoleErrorMsg(MEM_ALLOCATION_MSG);
+			DeallocateRestaurant(res);
+			ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
 		}
 
 		OrderInfo->Next = Table->OrderHead;
@@ -205,11 +198,8 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 {
 	POrder OrderInfo;
 
-	if (table_num > res->MaxTables || table_num <= 0)
-	{
-		fprintf(out, "\nTable number %d doesn't exist", table_num);
+	if (!ValidateTableNumber(out, table_num, res->MaxTables))
 		return;
-	}
 
 	if (res->Tables[table_num - 1].OrderHead == NULL)
 	{
@@ -256,11 +246,8 @@ void RemoveTable(FILE* out, PRestaurant res, int table_num)
 	PItem MostOrderedItem;
 	POrder OrderInfo;
 
-	if (table_num > res->MaxTables || table_num <= 0)
-	{
-		fprintf(out, "\nTable number %d doesn't exist", table_num);
+	if (!ValidateTableNumber(out, table_num, res->MaxTables))
 		return;
-	}
 
 	if (res->Tables[table_num - 1].OrderHead == NULL)
 	{
@@ -283,7 +270,18 @@ void RemoveTable(FILE* out, PRestaurant res, int table_num)
 	if (IsLastRemainingTable(res) && (MostOrderedItem = GetMostOrderedItem(res->MenuHead)) != NULL)
 		fprintf(out, "\nThe most popular dish today is %s! (was ordered %d times)", MostOrderedItem->Dish.ProductName, MostOrderedItem->TotalOrdered);
 	
-	DeallocateTable(&res->Tables[table_num - 1]);
+	DeallocateTableData(&res->Tables[table_num - 1]);
+}
+
+BOOL ValidateTableNumber(FILE* out, const int table_num, const int max_tables)
+{
+	if (table_num > max_tables || table_num <= 0)
+	{
+		fprintf(out, "\nTable number %d doesn't exist", table_num);
+		return false;
+	}
+
+	return true;
 }
 
 PItem IsNameExistsInMenu(PItem menu_head, const char name[])
@@ -345,7 +343,7 @@ PItem GetMostOrderedItem(PItem menu_head)
 	return res->TotalOrdered ? res : NULL;
 }
 
-void DeallocateTable(PTable table)
+void DeallocateTableData(PTable table)
 {
 	POrder Current = table->OrderHead, Next;
 
@@ -359,5 +357,24 @@ void DeallocateTable(PTable table)
 		Current->Data.Price = 0;
 		free(Current);
 		Current = Next;
+	}
+}
+
+void DeallocateRestaurant(PRestaurant res)
+{
+	PItem CurrentItem = res->MenuHead, Next;
+	int i;
+
+	for(i = 0; i < res->MaxTables; i++)
+		DeallocateTableData(&res->Tables[i]);
+
+	free(res->Tables);
+
+	while (CurrentItem != NULL)
+	{
+		Next = CurrentItem->Next;
+		free(CurrentItem->Dish.ProductName);
+		free(CurrentItem);
+		CurrentItem = Next;
 	}
 }

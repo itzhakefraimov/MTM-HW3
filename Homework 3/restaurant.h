@@ -1,7 +1,7 @@
 #ifndef RESTAURANT_HEADER
 #define RESTAURANT_HEADER
 
-#define MEM_ALLOCATION_MSG "Failed to allocate memory. Exiting..."
+#define ERROR_MEM_ALLOCATION_MSG "Failed to allocate memory. Exiting..."
 
 #define INSTRUCTIONS_FILE "Instructions.txt"
 #define MENU_FILE		  "Manot.txt"
@@ -46,16 +46,17 @@ typedef struct Restaurant
 
 void ConsoleErrorMsg(const char* msg);
 void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res);
-
 void CreateProducts(FILE* in, FILE* out, PRestaurant res);
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity);
 void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity);
 void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity);
 void RemoveTable(FILE* out, PRestaurant res, int table_num);
+BOOL ValidateTableNumber(FILE* out, const int table_num, const int max_tables);
 PItem IsNameExistsInMenu(PItem menu_head, const char name[]);
 POrder IsTableHasOrder(POrder order_head, const char name[]);
 BOOL IsLastRemainingTable(PRestaurant res);
 PItem GetMostOrderedItem(PItem menu_head);
-void DeallocateTable(PTable table);
+void DeallocateTableData(PTable table);
+void DeallocateRestaurant(PRestaurant res);
 
 #endif
