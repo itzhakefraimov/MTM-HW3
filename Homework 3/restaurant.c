@@ -6,6 +6,9 @@ void ConsoleErrorMsg(const char* msg)
 	exit(EXIT_FAILURE);
 }
 
+
+/* The function is responsible for reading from operating files and
+* execute written instructions accordingly */
 void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 {
 	int i,
@@ -21,7 +24,7 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 	if (Instruction != 1)
 		ConsoleErrorMsg("First Instruction must be number 1! Exiting...");
 	
-	if ((res->Tables = (PTable)malloc(TablesCount * sizeof(Table))) == NULL)
+	if ((res->Tables = (PTable)malloc(TablesCount * sizeof(struct Table))) == NULL)
 		ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
 
 	for (i = 0; i < TablesCount; i++)
@@ -60,6 +63,7 @@ void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
 	}
 }
 
+/* The function reads the menu file and assembles the menu with the data provided */
 void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 {
 	char Temp[MAX_PRODUCT_NAME + 1];
@@ -117,6 +121,9 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 	fputs("The kitchen was created", out);
 }
 
+
+/* The function receives an order data and if met all requirements, assigns
+* the order to the given table number */
 void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity)
 {
 	POrder OrderInfo;
@@ -148,7 +155,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 
 	if ((OrderInfo = IsTableHasOrder(Table->OrderHead, name)) == NULL)
 	{
-		if ((OrderInfo = (POrder)malloc(sizeof(Order))) == NULL)
+		if ((OrderInfo = (POrder)malloc(sizeof(struct Order))) == NULL)
 		{
 			DeallocateRestaurant(res);
 			ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
@@ -174,6 +181,9 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 	fprintf(out, "\n%d %s were added to table number %d", quantity, name, table_num);
 }
 
+
+/* The function gets an Item and quantity and if they meet the requirements
+* given quantity will be added to the item */
 void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 {
 	PItem ItemFromMenu = IsNameExistsInMenu(*menu_head, name);
@@ -194,6 +204,9 @@ void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
 	fprintf(out, "\n%d %s were added to the kitchen", quantity, name);
 }
 
+
+/* The function allows the customer to return an order and deducts its price
+* from the table's bill */
 void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], int quantity)
 {
 	POrder OrderInfo;
@@ -241,6 +254,8 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 	fprintf(out, "\n%d %s was returned to the kitchen from table number %d", quantity, name, table_num);
 }
 
+
+/* The function clears the table data and its orders and display the client the bill */
 void RemoveTable(FILE* out, PRestaurant res, int table_num)
 {
 	PItem MostOrderedItem;
@@ -273,6 +288,7 @@ void RemoveTable(FILE* out, PRestaurant res, int table_num)
 	DeallocateTableData(&res->Tables[table_num - 1]);
 }
 
+/* The function checks if given table num doesn't exceed maximum tables or <= 0 */
 BOOL ValidateTableNumber(FILE* out, const int table_num, const int max_tables)
 {
 	if (table_num > max_tables || table_num <= 0)
@@ -283,6 +299,8 @@ BOOL ValidateTableNumber(FILE* out, const int table_num, const int max_tables)
 	return true;
 }
 
+/* The function returns if a given product name exists in the menu;
+* if found - returns the address of the Item in the menu; NULL otherwise */
 PItem IsNameExistsInMenu(PItem menu_head, const char name[])
 {
 	if (menu_head == NULL)
@@ -298,6 +316,8 @@ PItem IsNameExistsInMenu(PItem menu_head, const char name[])
 	return NULL;
 }
 
+/* The function checks a table's order for a given meal
+* if found - returns the Order adress; NULL otherwise */
 POrder IsTableHasOrder(POrder order_head, const char name[])
 {
 	if (order_head == NULL)
@@ -313,6 +333,8 @@ POrder IsTableHasOrder(POrder order_head, const char name[])
 	return NULL;
 }
 
+/* The function checks if there's only 1 table with orders
+* if yes - returns true; false otherwise */
 BOOL IsLastRemainingTable(PRestaurant res)
 {
 	int i, count = 0;
@@ -323,6 +345,8 @@ BOOL IsLastRemainingTable(PRestaurant res)
 	return (count == 1) ? true : false;
 }
 
+/* The function finds the most ordered Item from the menu
+* if found - returns the Item address; NULL otherwise */
 PItem GetMostOrderedItem(PItem menu_head)
 {
 	PItem res = menu_head;
@@ -340,6 +364,7 @@ PItem GetMostOrderedItem(PItem menu_head)
 	return res->TotalOrdered ? res : NULL;
 }
 
+/* The function clears all table allocated data and nullyfies its fields */
 void DeallocateTableData(PTable table)
 {
 	POrder Current = table->OrderHead, Next;
@@ -357,6 +382,7 @@ void DeallocateTableData(PTable table)
 	}
 }
 
+/* The function clears all restaurant allocated memory (menu, tables, orders) */
 void DeallocateRestaurant(PRestaurant res)
 {
 	PItem CurrentItem = res->MenuHead, Next;

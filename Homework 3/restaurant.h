@@ -36,13 +36,13 @@ typedef struct Order
 	Product Data;
 	struct Order* Prev;
 	struct Order* Next;
-}Order, *POrder;
+}*POrder;
 
 typedef struct Table
 {
 	POrder OrderHead;
 	int Bill;
-}Table, *PTable;
+}*PTable;
 
 typedef struct Restaurant
 {
