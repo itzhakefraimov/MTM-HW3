@@ -6,7 +6,6 @@ void ConsoleErrorMsg(const char* msg)
 	exit(EXIT_FAILURE);
 }
 
-
 /* The function is responsible for reading from operating files and
 * execute written instructions accordingly */
 void InputInstructions(FILE* ins, FILE* menu, FILE* out, PRestaurant res)
@@ -121,6 +120,27 @@ void CreateProducts(FILE* in, FILE* out, PRestaurant res)
 	fputs("The kitchen was created", out);
 }
 
+/* The function gets an Item and quantity and if they meet the requirements
+* given quantity will be added to the item */
+void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
+{
+	PItem ItemFromMenu = IsNameExistsInMenu(*menu_head, name);
+
+	if (ItemFromMenu == NULL)
+	{
+		fprintf(out, "\nCan't add to %s if it doesn't exist", name);
+		return;
+	}
+
+	if (quantity <= 0)
+	{
+		fprintf(out, "\nQuantity of %s to add must be a positive number", name);
+		return;
+	}
+
+	ItemFromMenu->Dish.Quantity += quantity;
+	fprintf(out, "\n%d %s were added to the kitchen", quantity, name);
+}
 
 /* The function receives an order data and if met all requirements, assigns
 * the order to the given table number */
@@ -161,6 +181,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 			ConsoleErrorMsg(ERROR_MEM_ALLOCATION_MSG);
 		}
 
+		/* adds Order as head */
 		OrderInfo->Next = Table->OrderHead;
 		OrderInfo->Prev = NULL;
 		OrderInfo->Data = ItemFromMenu->Dish;
@@ -169,7 +190,7 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 		if (Table->OrderHead != NULL)
 			Table->OrderHead->Prev = OrderInfo;
 		else
-			Table->Bill = 0;
+			Table->Bill = 0; /* if first order of table - initialize bill before adding to it */
 
 		Table->OrderHead = OrderInfo;
 	}
@@ -180,30 +201,6 @@ void OrderItem(FILE* out, PRestaurant res, int table_num, const char name[], int
 	ItemFromMenu->TotalOrdered += quantity;
 	fprintf(out, "\n%d %s were added to table number %d", quantity, name, table_num);
 }
-
-
-/* The function gets an Item and quantity and if they meet the requirements
-* given quantity will be added to the item */
-void AddItems(FILE* out, PItem* menu_head, const char name[], int quantity)
-{
-	PItem ItemFromMenu = IsNameExistsInMenu(*menu_head, name);
-
-	if (ItemFromMenu == NULL)
-	{
-		fprintf(out, "\nCan't add to %s if it doesn't exist", name);
-		return;
-	}
-
-	if (quantity <= 0)
-	{
-		fprintf(out, "\nQuantity of %s to add must be a positive number", name);
-		return;
-	}
-
-	ItemFromMenu->Dish.Quantity += quantity;
-	fprintf(out, "\n%d %s were added to the kitchen", quantity, name);
-}
-
 
 /* The function allows the customer to return an order and deducts its price
 * from the table's bill */
@@ -238,6 +235,7 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 		return;
 	}
 
+	/* deducts returned item's price & quantity from the table */
 	res->Tables[table_num - 1].Bill -= (quantity * OrderInfo->Data.Price);
 	OrderInfo->Data.Quantity -= quantity;
 
@@ -253,7 +251,6 @@ void RemoveItem(FILE* out, PRestaurant res, int table_num, const char name[], in
 
 	fprintf(out, "\n%d %s was returned to the kitchen from table number %d", quantity, name, table_num);
 }
-
 
 /* The function clears the table data and its orders and display the client the bill */
 void RemoveTable(FILE* out, PRestaurant res, int table_num)
@@ -274,12 +271,14 @@ void RemoveTable(FILE* out, PRestaurant res, int table_num)
 
 	fprintf(out, "\n");
 
+	/* outputs every item with its quantity the table ordered */
 	while (OrderInfo != NULL)
 	{
 		fprintf(out, "%d %s. ", OrderInfo->Data.Quantity, OrderInfo->Data.ProductName);
 		OrderInfo = OrderInfo->Next;
 	}
 
+	/* outputs the table's bill */
 	fprintf(out, "%d nis, please!", res->Tables[table_num - 1].Bill);
 
 	if (IsLastRemainingTable(res) && (MostOrderedItem = GetMostOrderedItem(res->MenuHead)) != NULL)
@@ -372,6 +371,7 @@ void DeallocateTableData(PTable table)
 	table->Bill = 0;
 	table->OrderHead = NULL;
 
+	/* deallocates all orders from table and its data */
 	while (Current != NULL) {
 		Next = Current->Next;
 		Current->Data.ProductName = NULL;
@@ -391,8 +391,10 @@ void DeallocateRestaurant(PRestaurant res)
 	for(i = 0; i < res->MaxTables; i++)
 		DeallocateTableData(&res->Tables[i]);
 
+	/* deallocates tables array */
 	free(res->Tables);
 
+	/* deallocates the entire menu */
 	while (CurrentItem != NULL)
 	{
 		Next = CurrentItem->Next;
